@@ -1,6 +1,6 @@
 'use client'
 import type { FC } from 'react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import cn from 'classnames'
 import copy from 'copy-to-clipboard'
@@ -17,6 +17,7 @@ import RefreshCcw01 from '@/app/components/base/icons/line/refresh-ccw-01'
 import CodeEditor from '@/app/components/result/workflow/code-editor'
 import WorkflowProcessItem from '@/app/components/result/workflow/workflow-process'
 import { CodeLanguage } from '@/types/app'
+import ExcelPreview from '@/app/components/base/excel-preview'
 
 export type IGenerationItemProps = {
   isWorkflow?: boolean
@@ -55,6 +56,18 @@ export const copyIcon = (
   </svg>
 )
 
+// 检测内容中的 xlsx 链接
+const useExcelUrl = (content: any): string | null => {
+  return useMemo(() => {
+    if (typeof content !== 'string')
+      return null
+    // 匹配 .xlsx 链接（支持 http/https）
+    const xlsxRegex = /https?:\/\/[^\s\"]+\.xlsx/gi
+    const matches = content.match(xlsxRegex)
+    return matches ? matches[0] : null
+  }, [content])
+}
+
 const GenerationItem: FC<IGenerationItemProps> = ({
   isWorkflow,
   workflowProcessData,
@@ -73,6 +86,7 @@ const GenerationItem: FC<IGenerationItemProps> = ({
 }) => {
   const { t } = useTranslation()
   const isTop = depth === 1
+  const excelUrl = useExcelUrl(content)
 
   const [completionRes, setCompletionRes] = useState('')
   const [childMessageId, setChildMessageId] = useState<string | null>(null)
@@ -162,6 +176,10 @@ const GenerationItem: FC<IGenerationItemProps> = ({
                     value={content}
                     isJSONStringifyBeauty
                   />
+                )}
+                {/* Excel 预览 */}
+                {!isError && excelUrl && (
+                  <ExcelPreview url={excelUrl} maxRows={50} />
                 )}
               </div>
             </div>
